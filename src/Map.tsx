@@ -7,6 +7,10 @@ import MarkerClusterGroup from "react-leaflet-markercluster"
 import 'leaflet/dist/leaflet.css'
 // @ts-ignore
 import 'react-leaflet-markercluster/styles'
+import shadowUrl from '../public/marker-shadow.svg'
+import redIconUrl from '../public/marker-red.svg'
+import greenIconUrl from '../public/marker-green.svg'
+import blueIconUrl from '../public/marker-blue.svg'
 
 
 const smallIconSize = point(24, 24);
@@ -17,10 +21,9 @@ const bigIconSize = point(36, 36);
 const bigIconAnchor = point(18, 36);
 const bigShadowAnchor = point(17, 35);
 
-const shadowUrl = "public/marker-shadow.svg";
 
 const redIcon = icon({
-  iconUrl: "public/marker-red.svg",
+  iconUrl: redIconUrl,
   iconSize: bigIconSize,
   iconAnchor: bigIconAnchor,
   shadowUrl: shadowUrl,
@@ -28,7 +31,7 @@ const redIcon = icon({
   shadowAnchor: bigShadowAnchor
 });
 const greenIcon = icon({
-  iconUrl: "public/marker-green.svg",
+  iconUrl: greenIconUrl,
   iconSize: bigIconSize,
   iconAnchor: bigIconAnchor,
   shadowUrl: shadowUrl,
@@ -36,7 +39,7 @@ const greenIcon = icon({
   shadowAnchor: bigShadowAnchor
 })
 const blueIcon = icon({
-  iconUrl: "public/marker-blue.svg",
+  iconUrl: blueIconUrl,
   iconSize: smallIconSize,
   iconAnchor: smallIconAnchor,
   shadowUrl: shadowUrl,

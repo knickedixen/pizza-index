@@ -1,10 +1,13 @@
-// db.ts
 import Dexie, { type EntityTable } from 'dexie';
+import vesuviosData from './assets/vesuvios.json';
+import postcodesData from './assets/postcodes.json';
+
+const vesuvios: Product[] = vesuviosData;
+const postcodes: PostCode[] = postcodesData;
 
 let dbVersion = 1;
 
 interface Product {
-  id: number;
   product: string;
   price: number;
   restaurant: string;
@@ -26,7 +29,7 @@ interface PostCode {
 const db = new Dexie('PizzaIndex') as Dexie & {
   vesuvios: EntityTable<
     Product,
-    'id'
+    'code'
   >;
   postcodes: EntityTable<
     PostCode,
@@ -35,21 +38,15 @@ const db = new Dexie('PizzaIndex') as Dexie & {
 };
 
 db.version(dbVersion).stores({
-  vesuvios: '++id, product, price, restaurant, postcode, city, variant, longitude, latitude, code',
+  vesuvios: '&code, product, price, restaurant, postcode, city, variant, longitude, latitude',
   postcodes: '&postal_code, city, county, state, country'
 });
 
 async function loadDatabase() {
   return db.vesuvios.clear()
-    .then(() => fetch("public/vesuvios.json"))
-    .then((res) => res.text())
-    .then((text) => db.vesuvios.bulkAdd(JSON.parse(text)))
-    .then(() => console.log("Loaded vesuvios 2"))
+    .then(() => db.vesuvios.bulkAdd(vesuvios))
     .then(() => db.postcodes.clear())
-    .then(() => fetch("public/postcodes.json"))
-    .then((res) => res.text())
-    .then((text) => db.postcodes.bulkAdd(JSON.parse(text)))
-    .then(() => console.log("Loaded postcodes"));
+    .then(() => db.postcodes.bulkAdd(postcodes))
 }
 
 function searchProducts(attr: string, term: string) {
