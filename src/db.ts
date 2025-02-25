@@ -41,12 +41,12 @@ db.version(dbVersion).stores({
 
 async function loadDatabase() {
   return db.vesuvios.clear()
-    .then(() => fetch("vesuvios.json"))
+    .then(() => fetch("public/vesuvios.json"))
     .then((res) => res.text())
     .then((text) => db.vesuvios.bulkAdd(JSON.parse(text)))
     .then(() => console.log("Loaded vesuvios 2"))
     .then(() => db.postcodes.clear())
-    .then(() => fetch("postcodes.json"))
+    .then(() => fetch("public/postcodes.json"))
     .then((res) => res.text())
     .then((text) => db.postcodes.bulkAdd(JSON.parse(text)))
     .then(() => console.log("Loaded postcodes"));
