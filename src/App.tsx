@@ -1,42 +1,126 @@
-import { useState } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
-import './App.css'
-import { db, fetchProducts } from './db.ts'
-import Products from './Products.tsx'
+import { useEffect, useState } from 'react'
+import { db, searchProducts, fetchUniqueValues, Product } from './db.ts'
+import { Layout, Select, Flex, Spin, Tooltip } from 'antd';
+import Map from './Map.tsx'
+import { LoadingOutlined } from '@ant-design/icons';
 
-function App() {
-  const count = useLiveQuery(() => db.vesuvios.count());
-  const [attr, setAttr] = useState("city")
-  const [term, setTerm] = useState("linköping")
+const { Header, Content } = Layout;
 
-  function handleClick() {
-    setAttr("county");
-    setTerm("stockholm");
+function calculateAverage(products: Array<Product>) {
+  return products.reduce((sum, product) => sum + product.price, 0) / products.length;
+}
+
+const PriceDiff = function({ diff }: { diff: number }) {
+  let color = diff > 0 ? "red" : "green";
+  let sign = diff > 0 ? "+" : "";
+  return (
+    <>
+      {diff != 0 &&
+        <Tooltip placement="right" title="Compared to nation average!">
+          <span style={{ color: color, marginLeft: "5px" }}>{sign}{diff.toFixed(1)} kr</span>
+        </Tooltip>}
+    </>
+  );
+}
+
+function App({ dbLoaded: dbLoaded }: { dbLoaded: boolean }) {
+  const [totalCount, setTotalCount] = useState<number>(0)
+  const [totalAverage, setTotalAverage] = useState<number>(0)
+  const [areaCount, setAreaCount] = useState<number>(0)
+  const [areaAverage, setAreaAverage] = useState<number>(0)
+  const [attr, setAttr] = useState<string>("country")
+  const [term, setTerm] = useState<string>("SE")
+  const [products, setProducts] = useState<Array<Product>>([]);
+  const [options, setOptions] = useState<Array<{ value: string, label: string }>>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (dbLoaded) {
+      setLoading(true);
+      searchProducts(attr, term).then((products) => {
+        setProducts(products)
+        setAreaAverage(calculateAverage(products));
+        setAreaCount(products.length);
+        setLoading(false)
+      });
+    }
+  }, [attr, term, dbLoaded]);
+
+  useEffect(() => {
+    if (dbLoaded) {
+      setOptions([{ value: "country.SE", label: "Hela Sverige" }]);
+      fetchUniqueValues("city").then((cities) =>
+        cities.map((city) =>
+          ({ value: `city.${city}`, label: `${city} Stad` })
+        )
+      ).then((cities) => setOptions(prev => [...prev, ...cities]));
+
+      fetchUniqueValues("county").then((counties) =>
+        counties.map((county) =>
+          ({ value: `county.${county}`, label: `${county} Kommun` })
+        )
+      ).then((counties) => setOptions(prev => [...prev, ...counties]));
+
+      fetchUniqueValues("state").then((states) =>
+        states.map((state) =>
+          ({ value: `state.${state}`, label: `${state} Län` })
+        )
+      ).then((states) => setOptions(prev => [...prev, ...states]));
+
+      db.vesuvios.count().then((count) => setTotalCount(count));
+      searchProducts('country', 'SE').then((products) => {
+        setTotalAverage(calculateAverage(products));
+      });
+    }
+  }, [dbLoaded]);
+
+  function onAreaSelect(value: string) {
+    const split = value.split(".");
+    setAttr(split[0]);
+    setTerm(split[1]);
   }
-
 
   return (
     <>
-      <div className="page">
-        <div className="header">
-          <h3>PizzaIndex</h3>
-          <Button onClick={handleClick}/>
-        </div>
-        <div className="main">
-          <div className="left"><Products attr={attr} term={term}/></div>
-          <div className="right"><p>We got this many vesuvios: {count}</p></div>
-        </div>
-      </div>
+      <Layout style={{ background: "#fff" }}>
+        <Header style={{ background: "#fff", lineHeight: "normal" }}>
+          <Flex vertical={false} align='center' gap={10}>
+            <h3>PizzaIndex</h3>
+            <div>
+              <p>Total: {totalCount}</p>
+              <p>Average: {totalAverage.toFixed(1)} kr</p>
+            </div>
+            <Select
+              showSearch
+              onSelect={onAreaSelect}
+              style={{ width: 200 }}
+              placeholder="Search Area"
+              optionFilterProp="label"
+              filterSort={(optionA, optionB) =>
+                (optionA?.label ?? '').toLowerCase().localeCompare((optionB?.label ?? '').toLowerCase())
+              }
+              options={options}
+            />
+            <div>
+              <p>Area Total: {areaCount}</p>
+              {totalAverage != areaAverage &&
+                <p>
+                  Area Average: {areaAverage.toFixed(1)} kr
+                  <PriceDiff diff={areaAverage - totalAverage} />
+                </p>
+              }
+            </div>
+          </Flex>
+        </Header>
+        <Spin style={{ minHeight: "100%" }} indicator={<LoadingOutlined style={{ fontSize: 80 }} />} spinning={loading}>
+          <Layout style={{ height: "100%" }}>
+            <Content>
+              <Map products={products} />
+            </Content>
+          </Layout>
+        </Spin >
+      </Layout >
     </>
-  )
-}
-
-function Button({ onClick }) {
-
-  return (
-    <button onClick={onClick}>
-      Search
-    </button>
   )
 }
 

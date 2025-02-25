@@ -5,9 +5,15 @@ let dbVersion = 1;
 
 interface Product {
   id: number;
+  product: string;
   price: number;
   restaurant: string;
   postcode: string;
+  city: string;
+  variant: string;
+  longitude: number;
+  latitude: number;
+  code: string;
 }
 interface PostCode {
   postal_code: string;
@@ -29,50 +35,44 @@ const db = new Dexie('PizzaIndex') as Dexie & {
 };
 
 db.version(dbVersion).stores({
-  vesuvios: '++id, price, restaurant, postcode',
+  vesuvios: '++id, product, price, restaurant, postcode, city, variant, longitude, latitude, code',
   postcodes: '&postal_code, city, county, state, country'
 });
 
-function loadDatabase() {
-  fetch("vesuvios.json")
+async function loadDatabase() {
+  return db.vesuvios.clear()
+    .then(() => fetch("vesuvios.json"))
     .then((res) => res.text())
-    .then((text) => {
-      db.vesuvios.clear()
-      .then(function(){
-        db.vesuvios.bulkAdd(JSON.parse(text))
-      })
-      .then(function() {return db.vesuvios.count()})
-      .then(count => {
-        console.log(`Loaded ${count} vesuvios`)
-      });
-  });
-  fetch("postcodes.json")
+    .then((text) => db.vesuvios.bulkAdd(JSON.parse(text)))
+    .then(() => console.log("Loaded vesuvios 2"))
+    .then(() => db.postcodes.clear())
+    .then(() => fetch("postcodes.json"))
     .then((res) => res.text())
-    .then((text) => {
-      db.postcodes.clear()
-      .then(function(){
-        db.postcodes.bulkAdd(JSON.parse(text))
-      })
-      .then(function() {return db.postcodes.count()})
-      .then(count => {
-        console.log(`Loaded ${count} postcodes`)
-      });
-  });
+    .then((text) => db.postcodes.bulkAdd(JSON.parse(text)))
+    .then(() => console.log("Loaded postcodes"));
 }
 
+function searchProducts(attr: string, term: string) {
+  if (attr == "city") {
+    // TODO: Remove this when we got all postcodes. 
+    // Seems like the restaurants sets their own city on foodora.
+    return db.vesuvios.where("city").equalsIgnoreCase(term).sortBy("price");
+  } else {
+    return db.postcodes.where(attr).equalsIgnoreCase(term).toArray(postcodes => {
+      let postal = postcodes.map(
+        function(postcode) {
+          return postcode['postal_code'];
+        }
+      );
 
-function fetchProducts(attr, term) {
-  return db.postcodes.where(attr).equalsIgnoreCase(term).toArray(postcodes => {
-    postcodes = postcodes.map(
-      function(postcode) { 
-        return postcode['postal_code'];
-      }
-    );
+      return db.vesuvios.where("postcode").anyOf(postal).sortBy("price");
+    })
+  }
+}
 
-    console.log("found postcodes " + postcodes.length)
-    return db.vesuvios.where("postcode").anyOf(postcodes).sortBy("price");
-  })
+function fetchUniqueValues(attr: string) {
+  return db.postcodes.orderBy(attr).uniqueKeys();
 }
 
 export type { Product, PostCode };
-export { db, loadDatabase, fetchProducts };
+export { db, loadDatabase, searchProducts, fetchUniqueValues };

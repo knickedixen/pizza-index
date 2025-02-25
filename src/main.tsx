@@ -1,13 +1,7 @@
-import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import App from './App.tsx'
-import { loadDatabase } from './db.ts'
-
-loadDatabase()
+import DBLoader from './DBLoader.tsx'
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
+  <DBLoader />
 )
