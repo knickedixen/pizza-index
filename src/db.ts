@@ -54,6 +54,9 @@ function searchProducts(attr: string, term: string) {
     // TODO: Remove this when we got all postcodes. 
     // Seems like the restaurants sets their own city on foodora.
     return db.vesuvios.where("city").equalsIgnoreCase(term).sortBy("price");
+  } else if (attr == "country") {
+    // TODO: just temporary
+    return db.vesuvios.where("price").above(0).sortBy("price");
   } else {
     return db.postcodes.where(attr).equalsIgnoreCase(term).toArray(postcodes => {
       let postal = postcodes.map(
