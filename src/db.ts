@@ -50,12 +50,8 @@ async function loadDatabase() {
 }
 
 function searchProducts(attr: string, term: string) {
-  if (attr == "city") {
-    // TODO: Remove this when we got all postcodes. 
-    // Seems like the restaurants sets their own city on foodora.
-    return db.vesuvios.where("city").equalsIgnoreCase(term).sortBy("price");
-  } else if (attr == "country") {
-    // TODO: just temporary
+  if (attr == "country") {
+    // TODO: do this differently... empty arguments?
     return db.vesuvios.where("price").above(0).sortBy("price");
   } else {
     return db.postcodes.where(attr).equalsIgnoreCase(term).toArray(postcodes => {
