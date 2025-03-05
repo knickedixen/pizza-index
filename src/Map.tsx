@@ -1,17 +1,18 @@
 import "./Map.css"
-import { useEffect } from "react"
+import { useContext, useEffect } from "react"
 import { MapContainer, TileLayer, Marker, Tooltip, Popup, useMap } from 'react-leaflet'
-import { Product } from './db.ts'
-import { icon, latLng, LatLngBounds, latLngBounds, point } from "leaflet"
+import { Product, Region } from './db.ts'
+import { icon, latLng, latLngBounds, point } from "leaflet"
 import MarkerClusterGroup from "react-leaflet-markercluster"
 import 'leaflet/dist/leaflet.css'
 // @ts-ignore
 import 'react-leaflet-markercluster/styles'
-import shadowUrl from '../public/marker-shadow.svg'
-import redIconUrl from '../public/marker-red.svg'
-import greenIconUrl from '../public/marker-green.svg'
-import blueIconUrl from '../public/marker-blue.svg'
-
+import shadowUrl from './assets/marker-shadow.svg'
+import redIconUrl from './assets/marker-red.svg'
+import greenIconUrl from './assets/marker-green.svg'
+import blueIconUrl from './assets/marker-blue.svg'
+import GeoRegion from "./GeoRegion.tsx"
+import { searchContext } from "./App";
 
 const smallIconSize = point(24, 24);
 const smallIconAnchor = point(12, 24);
@@ -20,7 +21,6 @@ const smallShadowAnchor = point(11, 23);
 const bigIconSize = point(36, 36);
 const bigIconAnchor = point(18, 36);
 const bigShadowAnchor = point(17, 35);
-
 
 const redIcon = icon({
   iconUrl: redIconUrl,
@@ -47,12 +47,14 @@ const blueIcon = icon({
   shadowAnchor: smallShadowAnchor
 })
 
-
-const RecenterAutomatically = ({ bounds }: { bounds: LatLngBounds }) => {
+const RecenterAutomatically = () => {
+  const { selectedRegion } = useContext(searchContext);
   const map = useMap();
   useEffect(() => {
-    map.fitBounds(bounds);
-  }, [bounds]);
+    if (!selectedRegion) {
+      map.fitBounds(latLngBounds(latLng(55, 13), latLng(70, 22)));
+    }
+  }, [selectedRegion]);
   return null;
 }
 
@@ -73,11 +75,9 @@ const RestaurantPopup = function({ product }: { product: Product }) {
   );
 }
 
-export default function Map({ products: products }: { products: Array<Product> }) {
+export default function Map({ products, regions }: { products: Array<Product>, regions: Array<Region> }) {
 
   const productsCopy = [...products];
-
-  const bounds = productsCopy && productsCopy.length > 0 ? latLngBounds(productsCopy.map((product) => (latLng(product.latitude, product.longitude)))) : latLngBounds(latLng(55, 13), latLng(70, 22));
 
   let cheapest, mostExpensive;
   if (productsCopy.length > 1) {
@@ -92,7 +92,6 @@ export default function Map({ products: products }: { products: Array<Product> }
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-
         {cheapest &&
           <Marker
             zIndexOffset={2}
@@ -129,7 +128,11 @@ export default function Map({ products: products }: { products: Array<Product> }
           </Marker>
         }
 
-        <RecenterAutomatically bounds={bounds} />
+        {regions?.map((region) => (
+          <GeoRegion key={region.id} region={region} />
+        ))}
+
+        <RecenterAutomatically />
       </MapContainer>
     </>
   );

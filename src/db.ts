@@ -1,8 +1,13 @@
 import Dexie, { type EntityTable } from 'dexie';
-import vesuviosData from './assets/vesuvios.json';
+import productData from './assets/vesuvios.json';
 import postcodesData from './assets/postcodes.json';
+import { GeoJsonObject } from "geojson";
+import countyData from "./assets/counties.json"
+import stateData from "./assets/states.json"
 
-const vesuvios: Product[] = vesuviosData;
+const counties: Region[] = countyData;
+const states: Region[] = stateData;
+const products: Product[] = productData;
 const postcodes: PostCode[] = postcodesData;
 
 let dbVersion = 1;
@@ -18,57 +23,133 @@ interface Product {
   latitude: number;
   code: string;
 }
-interface PostCode {
+
+type RegionType = "state" | "county";
+//enum RegionType {
+//  county,
+//  state
+//}
+
+type RegionConstant = {
+  minPrice: number,
+  maxPrice: number,
+  label: string,
+  searchAttr: string
+}
+
+const regionConstants = new Map<RegionType, RegionConstant>([
+  [
+    "state", {
+      minPrice: 108,
+      maxPrice: 133,
+      label: "Län",
+      searchAttr: "state_code"
+    }
+  ],
+  ["county", {
+    minPrice: 75,
+    maxPrice: 145,
+    label: "Kommuner",
+    searchAttr: "county_code"
+  }]
+]);
+//const regionConstants: { RegionType: RegionConstant, RegionType: RegionConstant } = {
+//  "state": {
+//    minPrice: 108,
+//    maxPrice: 133,
+//    label: "Län",
+//  },
+//"county": {
+//  minPrice: 75,
+//    maxPrice: 145,
+//      label: "Kommuner",
+//  },
+//};
+
+interface Region {
+  id: string;
+  name: string;
+  type?: RegionType;
+  geojson: GeoJsonObject;
+}
+
+interface PostCode extends Region {
   postal_code: string;
   city: string;
   county: string;
+  county_code: string;
   state: string;
+  state_code: string;
   country: string;
 }
 
 const db = new Dexie('PizzaIndex') as Dexie & {
-  vesuvios: EntityTable<
+  product: EntityTable<
     Product,
     'code'
   >;
-  postcodes: EntityTable<
+  postcode: EntityTable<
     PostCode,
     'postal_code'
+  >;
+  region: EntityTable<
+    Region,
+    'id'
   >;
 };
 
 db.version(dbVersion).stores({
-  vesuvios: '&code, product, price, restaurant, postcode, city, variant, longitude, latitude',
-  postcodes: '&postal_code, city, county, state, country'
+  product: '&code, product, price, restaurant, postcode, city, variant, longitude, latitude',
+  postcode: '&postal_code, city, county, county_code, state, state_code, country',
+  region: '&id, name, type, geojson',
 });
 
 async function loadDatabase() {
-  return db.vesuvios.clear()
-    .then(() => db.vesuvios.bulkAdd(vesuvios))
-    .then(() => db.postcodes.clear())
-    .then(() => db.postcodes.bulkAdd(postcodes))
+  return db.product.clear()
+    .then(() => db.product.bulkAdd(products))
+    .then(() => db.postcode.clear())
+    .then(() => db.postcode.bulkAdd(postcodes))
+    .then(() => db.region.clear())
+    .then(() => db.region.bulkAdd(states.map(state => ({ ...state, type: 'state' }))))
+    .then(() => db.region.bulkAdd(counties.map(county => ({ ...county, type: 'county' }))))
 }
 
-function searchProducts(attr: string, term: string) {
-  if (attr == "country") {
-    // TODO: do this differently... empty arguments?
-    return db.vesuvios.where("price").above(0).sortBy("price");
-  } else {
-    return db.postcodes.where(attr).equalsIgnoreCase(term).toArray(postcodes => {
-      let postal = postcodes.map(
-        function(postcode) {
-          return postcode['postal_code'];
-        }
-      );
-
-      return db.vesuvios.where("postcode").anyOf(postal).sortBy("price");
-    })
-  }
+//function searchProducts(attr: string, term: string) {
+//  return db.postcode.where(attr).equalsIgnoreCase(term).toArray(postcodes => {
+//    let postal = postcodes.map(
+//      function(postcode) {
+//        return postcode['postal_code'];
+//      }
+//    );
+//
+//    return db.product.where("postcode").anyOf(postal).sortBy("price");
+//  })
+//}
+function searchProducts(id: string) {
+  return getRegion(id).then((region) => {
+    if (region) {
+      return db.postcode.where(`${region.type}_code`).equals(region.id).toArray(postcodes => {
+        let postal = postcodes.map(
+          function(postcode) {
+            return postcode['postal_code'];
+          }
+        );
+        return db.product.where("postcode").anyOf(postal).sortBy("price");
+      });
+    }
+  })
 }
 
-function fetchUniqueValues(attr: string) {
-  return db.postcodes.orderBy(attr).uniqueKeys();
+function getAllRestaurants() {
+  return db.product.toArray();
 }
 
-export type { Product, PostCode };
-export { db, loadDatabase, searchProducts, fetchUniqueValues };
+function getRegion(id: string) {
+  return db.region.where("id").equals(id).first();
+}
+function getRegions(type: RegionType) {
+  return db.region.where("type").equalsIgnoreCase(type).toArray();
+}
+
+export type { Product, PostCode, Region, RegionType, RegionConstant };
+export { db, loadDatabase, searchProducts, getAllRestaurants, getRegions, getRegion, regionConstants };

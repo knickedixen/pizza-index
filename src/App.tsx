@@ -1,13 +1,14 @@
-import { useEffect, useState } from 'react'
-import { db, searchProducts, fetchUniqueValues, Product } from './db.ts'
-import { Layout, Select, Flex, Spin, Tooltip } from 'antd';
+import { useEffect, useState, createContext } from 'react'
+import { searchProducts, Product, Region, getRegions, RegionType, regionConstants, RegionConstant, getAllRestaurants, getRegion } from './db.ts'
+import { Layout, Select, Flex, Spin, Tooltip, Button } from 'antd';
 import Map from './Map.tsx'
 import { LoadingOutlined } from '@ant-design/icons';
 
 const { Header, Content } = Layout;
 
 function calculateAverage(products: Array<Product>) {
-  return products.reduce((sum, product) => sum + product.price, 0) / products.length;
+  let sum = products.reduce((sum, product) => sum + product.price, 0);
+  return sum > 0 ? sum / products.length : 0;
 }
 
 const PriceDiff = function({ diff }: { diff: number }) {
@@ -23,105 +24,160 @@ const PriceDiff = function({ diff }: { diff: number }) {
   );
 }
 
+type Search = {
+  regionType: RegionType | null,
+  selectedRegion: string | null,
+  setRegionType: (attr: RegionType) => void;
+  setSelectedRegion: (term: string) => void;
+}
+
+const SearchContext = createContext<Search>({
+  regionType: null,
+  selectedRegion: null,
+  setRegionType: () => { },
+  setSelectedRegion: () => { },
+});
+
 function App({ dbLoaded: dbLoaded }: { dbLoaded: boolean }) {
   const [totalCount, setTotalCount] = useState<number>(0)
   const [totalAverage, setTotalAverage] = useState<number>(0)
   const [areaCount, setAreaCount] = useState<number>(0)
   const [areaAverage, setAreaAverage] = useState<number>(0)
-  const [attr, setAttr] = useState<string>("country")
-  const [term, setTerm] = useState<string>("SE")
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(null)
+  const [regionType, setRegionType] = useState<RegionType>("state")
   const [products, setProducts] = useState<Array<Product>>([]);
-  const [options, setOptions] = useState<Array<{ value: string, label: string }>>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [regions, setRegions] = useState<Array<Region>>([]);
+  const [areaOptions, setAreaOptions] = useState<Array<{ value: string, label: string }>>([]);
+  const [regionTypeOptions, setRegionTypeOptions] = useState<Array<{ value: string, label: string }>>([]);
+  const [loadingProducts, setLoadingProducts] = useState<boolean>(false);
+  const [loadingRegions, setLoadingRegions] = useState<boolean>(false);
+
+  const search = {
+    regionType: regionType,
+    selectedRegion: selectedRegion,
+    setRegionType: setRegionType,
+    setSelectedRegion: setSelectedRegion
+  }
 
   useEffect(() => {
     if (dbLoaded) {
-      setLoading(true);
-      searchProducts(attr, term).then((products) => {
-        setProducts(products)
-        setAreaAverage(calculateAverage(products));
-        setAreaCount(products.length);
-        setLoading(false)
+      if (selectedRegion) {
+        setLoadingProducts(true);
+        getRegion(selectedRegion).then(region => {
+          if (region && region.type) {
+            setRegionType(region.type);
+          }
+        });
+        searchProducts(selectedRegion).then((products) => {
+          setProducts(products ?? []);
+          setAreaAverage(calculateAverage(products ?? []));
+          setAreaCount(products ? products.length : 0);
+          setLoadingProducts(false);
+        });
+      } else {
+
+      }
+    }
+  }, [selectedRegion, selectedRegion, dbLoaded]);
+
+  useEffect(() => {
+    if (dbLoaded) {
+      setLoadingRegions(true);
+      getRegions(regionType).then((regions) => {
+        setRegions(regions);
+        setLoadingRegions(false);
       });
     }
-  }, [attr, term, dbLoaded]);
+  }, [regionType, dbLoaded]);
 
   useEffect(() => {
     if (dbLoaded) {
-      setOptions([{ value: "country.SE", label: "Hela Sverige" }]);
-      fetchUniqueValues("city").then((cities) =>
-        cities.map((city) =>
-          ({ value: `city.${city}`, label: `${city} Stad` })
-        )
-      ).then((cities) => setOptions(prev => [...prev, ...cities]));
-
-      fetchUniqueValues("county").then((counties) =>
-        counties.map((county) =>
-          ({ value: `county.${county}`, label: `${county} Kommun` })
-        )
-      ).then((counties) => setOptions(prev => [...prev, ...counties]));
-
-      fetchUniqueValues("state").then((states) =>
-        states.map((state) =>
-          ({ value: `state.${state}`, label: `${state} Län` })
-        )
-      ).then((states) => setOptions(prev => [...prev, ...states]));
-
-      db.vesuvios.count().then((count) => setTotalCount(count));
-      searchProducts('country', 'SE').then((products) => {
+      regionConstants.forEach((regionConst: RegionConstant, type: RegionType) => {
+        setRegionTypeOptions(prev => [...prev, { value: type, label: regionConst.label }]);
+        getRegions(type).then((values) =>
+          values.map((value) =>
+            ({ value: value.id, label: value.name })
+          )
+        ).then((counties) => setAreaOptions(prev => [...prev, ...counties]));
+      });
+      getAllRestaurants().then((products) => {
+        setTotalCount(products.length);
         setTotalAverage(calculateAverage(products));
       });
     }
   }, [dbLoaded]);
 
-  function onAreaSelect(value: string) {
-    const split = value.split(".");
-    setAttr(split[0]);
-    setTerm(split[1]);
-  }
+  const onRegionSelection = function(val: RegionType) {
+    if (val != regionType) {
+      setProducts([]);
+      setSelectedRegion("");
+    }
+    setRegionType(val);
+  };
 
   return (
     <>
-      <Layout style={{ background: "#fff" }}>
-        <Header style={{ background: "#fff", lineHeight: "normal" }}>
-          <Flex vertical={false} align='center' gap={10}>
-            <h3>PizzaIndex</h3>
-            <div>
-              <p>Total: {totalCount}</p>
-              <p>Average: {totalAverage.toFixed(1)} kr</p>
-            </div>
-            <Select
-              showSearch
-              onSelect={onAreaSelect}
-              style={{ width: 200 }}
-              placeholder="Search Area"
-              optionFilterProp="label"
-              filterSort={(optionA, optionB) =>
-                (optionA?.label ?? '').toLowerCase().localeCompare((optionB?.label ?? '').toLowerCase())
-              }
-              options={options}
-            />
-            <div>
-              <p>Area Total: {areaCount}</p>
-              {totalAverage != areaAverage &&
+      <SearchContext.Provider value={search}>
+        <Layout style={{ background: "#fff" }}>
+          <Header style={{ background: "#fff", lineHeight: "normal" }}>
+            <Flex vertical={false} align='center' justify='space-between' gap={10}>
+              <Flex vertical={false} align='center' gap={20}>
+                <h3>PizzaIndex</h3>
+                <Select
+                  value={regionType}
+                  onSelect={onRegionSelection}
+                  style={{ width: 200 }}
+                  options={regionTypeOptions}
+                />
+                <Select
+                  showSearch
+                  value={selectedRegion}
+                  onSelect={val => setSelectedRegion(val)}
+                  style={{ width: 200 }}
+                  placeholder="Search Area"
+                  optionFilterProp="label"
+                  filterSort={(optionA, optionB) =>
+                    (optionA?.label ?? '').toLowerCase().localeCompare((optionB?.label ?? '').toLowerCase())
+                  }
+                  options={areaOptions}
+                />
+                <Button onClick={() => { setSelectedRegion(""); setProducts([]) }}>Reset</Button>
+                {selectedRegion &&
+                  <>
+                    <div>
+                      Restaurants In Area: {areaCount}
+                      <br />
+                      {totalAverage != areaAverage &&
+                        <div>
+                          Area Average Price: {areaAverage.toFixed(1)} kr
+                          <PriceDiff diff={areaAverage - totalAverage} />
+                        </div>
+                      }
+                    </div>
+                  </>
+                }
+              </Flex>
+              <div>
                 <p>
-                  Area Average: {areaAverage.toFixed(1)} kr
-                  <PriceDiff diff={areaAverage - totalAverage} />
+                  <b>Restaurants:</b> {totalCount}
+                  <br />
+                  <b>Average price:</b> {totalAverage.toFixed(1)} kr
                 </p>
-              }
-            </div>
-          </Flex>
-        </Header>
-        <Spin style={{ minHeight: "100%" }} indicator={<LoadingOutlined style={{ fontSize: 80 }} />} spinning={loading}>
-          <Layout style={{ height: "100%" }}>
-            <Content>
-              <Map products={products} />
-            </Content>
-          </Layout>
-        </Spin >
-      </Layout >
+              </div>
+            </Flex>
+          </Header>
+          <Spin style={{ minHeight: "100%" }} indicator={<LoadingOutlined style={{ fontSize: 80 }} />} spinning={loadingProducts || loadingRegions}>
+            <Layout style={{ height: "100%" }}>
+              <Content>
+                <Map products={products} regions={regions} />
+              </Content>
+            </Layout>
+          </Spin >
+        </Layout >
+      </SearchContext.Provider>
     </>
   )
 }
 
-export default App
+export default App;
+export { calculateAverage, SearchContext as searchContext };

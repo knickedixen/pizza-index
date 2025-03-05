@@ -15,6 +15,7 @@
     "antd": "^5.24.1",
     "dexie": "^4.0.11",
     "dexie-react-hooks": "^1.1.7",
+    "javascript-color-gradient": "^2.5.0",
     "leaflet": "^1.9.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -24,6 +25,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.20.0",
+    "@types/javascript-color-gradient": "^2.4.2",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",
