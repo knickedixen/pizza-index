@@ -1,7 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie';
 import productData from './assets/vesuvios.json';
 import postcodesData from './assets/postcodes.json';
-import { GeoJsonObject } from "geojson";
 import countyData from "./assets/counties.json"
 import stateData from "./assets/states.json"
 
@@ -23,12 +22,22 @@ interface Product {
   latitude: number;
   code: string;
 }
-
+interface Region {
+  id: string;
+  name: string;
+  type?: RegionType;
+  geojson: any;
+}
+interface PostCode {
+  postal_code: string;
+  city: string;
+  county: string;
+  county_code: string;
+  state: string;
+  state_code: string;
+  country: string;
+}
 type RegionType = "state" | "county";
-//enum RegionType {
-//  county,
-//  state
-//}
 
 type RegionConstant = {
   minPrice: number,
@@ -53,35 +62,6 @@ const regionConstants = new Map<RegionType, RegionConstant>([
     searchAttr: "county_code"
   }]
 ]);
-//const regionConstants: { RegionType: RegionConstant, RegionType: RegionConstant } = {
-//  "state": {
-//    minPrice: 108,
-//    maxPrice: 133,
-//    label: "Län",
-//  },
-//"county": {
-//  minPrice: 75,
-//    maxPrice: 145,
-//      label: "Kommuner",
-//  },
-//};
-
-interface Region {
-  id: string;
-  name: string;
-  type?: RegionType;
-  geojson: GeoJsonObject;
-}
-
-interface PostCode extends Region {
-  postal_code: string;
-  city: string;
-  county: string;
-  county_code: string;
-  state: string;
-  state_code: string;
-  country: string;
-}
 
 const db = new Dexie('PizzaIndex') as Dexie & {
   product: EntityTable<

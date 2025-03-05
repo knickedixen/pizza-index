@@ -4,7 +4,8 @@ import Gradient from "javascript-color-gradient";
 import { useEffect, useState, useContext } from "react"
 import { Region, regionConstants } from './db.ts'
 import { Tooltip, GeoJSON, useMap } from 'react-leaflet'
-import { LatLngBounds, Layer } from "leaflet";
+import { LatLngBounds, Polyline } from "leaflet";
+import { Feature } from "geojson";
 import { searchContext } from "./App";
 
 export default function GeoRegion({ region }: { region: Region }) {
@@ -55,7 +56,7 @@ export default function GeoRegion({ region }: { region: Region }) {
     fitBounds();
   }, [selectedRegion, bounds]);
 
-  const onEachFeature = (feature: GeoJsonFeature, layer: Layer) => {
+  const onEachFeature = (_feature: Feature, layer: Polyline) => {
     setBounds(layer.getBounds());
     layer.on("click", function() {
       if (region.type && region.id) {
