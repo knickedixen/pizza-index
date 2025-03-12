@@ -1,26 +1,40 @@
 import App from './App.tsx'
-import { StrictMode, useEffect, useState } from 'react'
+import { createContext, StrictMode, useEffect, useState } from 'react'
 import { loadDatabase } from './db.ts'
 import { Spin } from 'antd';
 
+type Loading = {
+  dbReady: boolean
+}
+
+const LoadingContext = createContext<Loading>({
+  dbReady: false
+});
+
 function DBLoader() {
-  const [dbLoaded, setDbLoaded] = useState<boolean>(false);
+  const [dbReady, setDbReady] = useState<boolean>(false);
+  const loadingContext = {
+    dbReady: dbReady
+  }
 
   useEffect(() => {
     loadDatabase().then(() => {
-      setDbLoaded(true)
+      setDbReady(true)
       console.log("Database loaded");
     });
   }, []);
 
   return (
     <>
-      {!dbLoaded && <Spin fullscreen size='large' tip="Setting up database..." />}
-      <StrictMode>
-        <App dbLoaded={dbLoaded} />
-      </StrictMode>
+      <LoadingContext.Provider value={loadingContext}>
+        {!dbReady && <Spin fullscreen size='large' tip="Setting up database..." />}
+        <StrictMode>
+          <App />
+        </StrictMode>
+      </LoadingContext.Provider>
     </>
   );
 }
 
 export default DBLoader
+export { LoadingContext }

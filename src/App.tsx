@@ -1,8 +1,9 @@
-import { useEffect, useState, createContext } from 'react'
-import { searchProducts, Product, Region, getRegions, RegionType, regionConstants, RegionConstant, getAllRestaurants, getRegion } from './db.ts'
+import { useEffect, useState, createContext, useContext } from 'react'
+import { searchProducts, Product, getRegions, RegionType, regionConstants, RegionConstant, getAllRestaurants, getRegion } from './db.ts'
 import { Layout, Select, Flex, Spin, Tooltip, Button } from 'antd';
 import Map from './Map.tsx'
 import { LoadingOutlined } from '@ant-design/icons';
+import { LoadingContext } from './DBLoader.tsx';
 
 const { Header, Content } = Layout;
 
@@ -24,21 +25,21 @@ const PriceDiff = function({ diff }: { diff: number }) {
   );
 }
 
-type Search = {
+type RegionSelection = {
   regionType: RegionType | null,
   selectedRegion: string | null,
   setRegionType: (attr: RegionType) => void;
   setSelectedRegion: (term: string) => void;
 }
 
-const SearchContext = createContext<Search>({
+const RegionSelectionContext = createContext<RegionSelection>({
   regionType: null,
   selectedRegion: null,
   setRegionType: () => { },
   setSelectedRegion: () => { },
 });
 
-function App({ dbLoaded: dbLoaded }: { dbLoaded: boolean }) {
+function App() {
   const [totalCount, setTotalCount] = useState<number>(0)
   const [totalAverage, setTotalAverage] = useState<number>(0)
   const [areaCount, setAreaCount] = useState<number>(0)
@@ -46,13 +47,12 @@ function App({ dbLoaded: dbLoaded }: { dbLoaded: boolean }) {
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null)
   const [regionType, setRegionType] = useState<RegionType>("state")
   const [products, setProducts] = useState<Array<Product>>([]);
-  const [regions, setRegions] = useState<Array<Region>>([]);
   const [areaOptions, setAreaOptions] = useState<Array<{ value: string, label: string }>>([]);
   const [regionTypeOptions, setRegionTypeOptions] = useState<Array<{ value: string, label: string }>>([]);
   const [loadingProducts, setLoadingProducts] = useState<boolean>(false);
-  const [loadingRegions, setLoadingRegions] = useState<boolean>(false);
+  const { dbReady } = useContext(LoadingContext);
 
-  const search = {
+  const regionSelection = {
     regionType: regionType,
     selectedRegion: selectedRegion,
     setRegionType: setRegionType,
@@ -60,7 +60,7 @@ function App({ dbLoaded: dbLoaded }: { dbLoaded: boolean }) {
   }
 
   useEffect(() => {
-    if (dbLoaded) {
+    if (dbReady) {
       if (selectedRegion) {
         setLoadingProducts(true);
         getRegion(selectedRegion).then(region => {
@@ -75,23 +75,13 @@ function App({ dbLoaded: dbLoaded }: { dbLoaded: boolean }) {
           setLoadingProducts(false);
         });
       } else {
-
+        setProducts([]);
       }
     }
-  }, [selectedRegion, selectedRegion, dbLoaded]);
+  }, [selectedRegion, dbReady]);
 
   useEffect(() => {
-    if (dbLoaded) {
-      setLoadingRegions(true);
-      getRegions(regionType).then((regions) => {
-        setRegions(regions);
-        setLoadingRegions(false);
-      });
-    }
-  }, [regionType, dbLoaded]);
-
-  useEffect(() => {
-    if (dbLoaded) {
+    if (dbReady) {
       regionConstants.forEach((regionConst: RegionConstant, type: RegionType) => {
         setRegionTypeOptions(prev => [...prev, { value: type, label: regionConst.label }]);
         getRegions(type).then((values) =>
@@ -105,7 +95,7 @@ function App({ dbLoaded: dbLoaded }: { dbLoaded: boolean }) {
         setTotalAverage(calculateAverage(products));
       });
     }
-  }, [dbLoaded]);
+  }, [dbReady]);
 
   const onRegionSelection = function(val: RegionType) {
     if (val != regionType) {
@@ -117,7 +107,7 @@ function App({ dbLoaded: dbLoaded }: { dbLoaded: boolean }) {
 
   return (
     <>
-      <SearchContext.Provider value={search}>
+      <RegionSelectionContext.Provider value={regionSelection}>
         <Layout style={{ background: "#fff" }}>
           <Header style={{ background: "#fff", lineHeight: "normal" }}>
             <Flex vertical={false} align='center' justify='space-between' gap={10}>
@@ -166,18 +156,18 @@ function App({ dbLoaded: dbLoaded }: { dbLoaded: boolean }) {
               </div>
             </Flex>
           </Header>
-          <Spin style={{ minHeight: "100%" }} indicator={<LoadingOutlined style={{ fontSize: 80 }} />} spinning={loadingProducts || loadingRegions}>
+          <Spin style={{ minHeight: "100%" }} indicator={<LoadingOutlined style={{ fontSize: 80 }} />} spinning={loadingProducts}>
             <Layout style={{ height: "100%" }}>
               <Content>
-                <Map products={products} regions={regions} />
+                <Map products={products} />
               </Content>
             </Layout>
           </Spin >
         </Layout >
-      </SearchContext.Provider>
+      </RegionSelectionContext.Provider>
     </>
   )
 }
 
 export default App;
-export { calculateAverage, SearchContext as searchContext };
+export { calculateAverage, RegionSelectionContext };

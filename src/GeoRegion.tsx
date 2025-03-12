@@ -4,35 +4,42 @@ import Gradient from "javascript-color-gradient";
 import { useEffect, useState, useContext } from "react"
 import { Region, regionConstants } from './db.ts'
 import { Tooltip, GeoJSON, useMap } from 'react-leaflet'
-import { LatLngBounds, Polyline } from "leaflet";
+import { Polyline } from "leaflet";
 import { Feature } from "geojson";
-import { searchContext } from "./App";
+import { RegionSelectionContext } from "./App";
+
+const getColor = function(region: Region, average: number, selectedRegion: string | null) {
+  if (!region.type || !regionConstants.has(region.type)) {
+    console.warn(`Uknown region type '${region.type}'`);
+    return "gray";
+  }
+
+  let typeConstants = regionConstants.get(region.type);
+  if (average <= 0 || selectedRegion == region.id || !typeConstants) {
+    return "gray";
+  }
+
+  let weight = average - typeConstants.minPrice;
+  weight = weight > 0 ? weight : 1;
+  let midpoint = typeConstants.maxPrice - typeConstants.minPrice;
+  let gradient = new Gradient().setColorGradient("#001aff", "#fc0307").setMidpoint(midpoint);
+
+  return gradient.getColor(weight);
+}
 
 export default function GeoRegion({ region }: { region: Region }) {
   const [count, setCount] = useState<number>(0)
   const [average, setAverage] = useState<number>(0)
-  const [bounds, setBounds] = useState<LatLngBounds | null>(null)
-  const { selectedRegion, setRegionType, setSelectedRegion } = useContext(searchContext);
+  const [layer, setLayer] = useState<Polyline | null>()
   const map = useMap();
+  const {
+    selectedRegion,
+    regionType,
+    setRegionType,
+    setSelectedRegion } = useContext(RegionSelectionContext);
 
-  if (!region.type || !regionConstants.has(region.type)) {
-    console.warn(`Uknown region type '${region.type}'`);
-    return;
-  }
-
-  let typeConstants = regionConstants.get(region.type);
-  let color = "gray";
+  let color = getColor(region, average, selectedRegion);
   let opacity = selectedRegion == region.id ? 0 : 0.5;
-
-  if (count > 0 && average > 0 && typeConstants && (!selectedRegion || selectedRegion == region.id)) {
-    let weight = average - typeConstants.minPrice;
-    weight = weight > 0 ? weight : 1;
-    let midpoint = typeConstants.maxPrice - typeConstants.minPrice;
-    color = new Gradient()
-      .setColorGradient("#001aff", "#fc0307")
-      .setMidpoint(midpoint)
-      .getColor(weight);
-  }
 
   const geoJsonStyle = {
     fillColor: color,
@@ -47,17 +54,22 @@ export default function GeoRegion({ region }: { region: Region }) {
     setCount(products ? products.length : 0);
   });
 
-  const fitBounds = function() {
-    if (selectedRegion == region.id && bounds) {
-      map.fitBounds(bounds);
-    }
-  }
   useEffect(() => {
     fitBounds();
-  }, [selectedRegion, bounds]);
+  }, [selectedRegion, layer]);
+
+  useEffect(() => {
+    if (layer) {
+      if (regionType == region.type) {
+        map.addLayer(layer);
+      } else {
+        map.removeLayer(layer);
+      }
+    }
+  }, [regionType, layer]);
 
   const onEachFeature = (_feature: Feature, layer: Polyline) => {
-    setBounds(layer.getBounds());
+    setLayer(layer);
     layer.on("click", function() {
       if (region.type && region.id) {
         setRegionType(region.type)
@@ -65,6 +77,12 @@ export default function GeoRegion({ region }: { region: Region }) {
       }
     })
   };
+
+  const fitBounds = function() {
+    if (selectedRegion == region.id && layer) {
+      map.fitBounds(layer.getBounds());
+    }
+  }
 
   return (
     <>

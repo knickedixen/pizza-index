@@ -1,8 +1,8 @@
 import "./Map.css"
-import { useContext, useEffect } from "react"
-import { MapContainer, TileLayer, Marker, Tooltip, Popup, useMap } from 'react-leaflet'
-import { Product, Region } from './db.ts'
-import { icon, latLng, latLngBounds, point } from "leaflet"
+import { useContext, useEffect, useState } from "react"
+import { MapContainer, TileLayer, Marker } from 'react-leaflet'
+import { getAllRegions, Product, Region } from './db.ts'
+import { icon, point } from "leaflet"
 import MarkerClusterGroup from "react-leaflet-markercluster"
 import 'leaflet/dist/leaflet.css'
 // @ts-ignore
@@ -12,7 +12,10 @@ import redIconUrl from './assets/marker-red.svg'
 import greenIconUrl from './assets/marker-green.svg'
 import blueIconUrl from './assets/marker-blue.svg'
 import GeoRegion from "./GeoRegion.tsx"
-import { searchContext } from "./App";
+import { RegionSelectionContext } from "./App";
+import { LoadingContext } from "./DBLoader.tsx"
+import RestaurantPopup from "./RestaurantPopup.tsx"
+import RecenterMapAutomatically from "./RecenterMapAutomatically.tsx"
 
 const smallIconSize = point(24, 24);
 const smallIconAnchor = point(12, 24);
@@ -47,43 +50,23 @@ const blueIcon = icon({
   shadowAnchor: smallShadowAnchor
 })
 
-const RecenterAutomatically = () => {
-  const { selectedRegion } = useContext(searchContext);
-  const map = useMap();
-  useEffect(() => {
-    if (!selectedRegion) {
-      map.fitBounds(latLngBounds(latLng(55, 13), latLng(70, 22)));
-    }
-  }, [selectedRegion]);
-  return null;
-}
-
-const RestaurantPopup = function({ product }: { product: Product }) {
-  return (
-    <>
-      <Popup>
-        <h5>{product.restaurant}, {product.city}</h5>
-        <p>{product.product} {product.price} kr</p>
-        <a href={"https://www.foodora.se/restaurant/" + product.code} target="_blank">
-          Go to restaurant
-        </a>
-      </Popup>
-      <Tooltip permanent direction="right" offset={point(5, 0)}>
-        {product.price} kr
-      </Tooltip>
-    </>
-  );
-}
-
-export default function Map({ products, regions }: { products: Array<Product>, regions: Array<Region> }) {
-
+export default function Map({ products }: { products: Array<Product> }) {
   const productsCopy = [...products];
+  const { dbReady } = useContext(LoadingContext);
+  const { selectedRegion } = useContext(RegionSelectionContext);
+  const [regions, setRegions] = useState<Array<Region>>([])
 
   let cheapest, mostExpensive;
   if (productsCopy.length > 1) {
     cheapest = productsCopy?.shift();
     mostExpensive = productsCopy?.pop();
   }
+
+  useEffect(() => {
+    if (dbReady) {
+      getAllRegions().then(regions => setRegions(regions));
+    }
+  }, [dbReady]);
 
   return (
     <>
@@ -127,12 +110,11 @@ export default function Map({ products, regions }: { products: Array<Product>, r
             <RestaurantPopup product={mostExpensive} />
           </Marker>
         }
-
         {regions?.map((region) => (
           <GeoRegion key={region.id} region={region} />
         ))}
 
-        <RecenterAutomatically />
+        <RecenterMapAutomatically selectedRegion={selectedRegion} />
       </MapContainer>
     </>
   );

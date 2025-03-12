@@ -55,12 +55,13 @@ const regionConstants = new Map<RegionType, RegionConstant>([
       searchAttr: "state_code"
     }
   ],
-  ["county", {
-    minPrice: 75,
-    maxPrice: 145,
-    label: "Kommuner",
-    searchAttr: "county_code"
-  }]
+  [
+    "county", {
+      minPrice: 75,
+      maxPrice: 145,
+      label: "Kommuner",
+      searchAttr: "county_code"
+    }]
 ]);
 
 const db = new Dexie('PizzaIndex') as Dexie & {
@@ -94,17 +95,6 @@ async function loadDatabase() {
     .then(() => db.region.bulkAdd(counties.map(county => ({ ...county, type: 'county' }))))
 }
 
-//function searchProducts(attr: string, term: string) {
-//  return db.postcode.where(attr).equalsIgnoreCase(term).toArray(postcodes => {
-//    let postal = postcodes.map(
-//      function(postcode) {
-//        return postcode['postal_code'];
-//      }
-//    );
-//
-//    return db.product.where("postcode").anyOf(postal).sortBy("price");
-//  })
-//}
 function searchProducts(id: string) {
   return getRegion(id).then((region) => {
     if (region) {
@@ -127,9 +117,12 @@ function getAllRestaurants() {
 function getRegion(id: string) {
   return db.region.where("id").equals(id).first();
 }
+function getAllRegions() {
+  return db.region.toArray();
+}
 function getRegions(type: RegionType) {
   return db.region.where("type").equalsIgnoreCase(type).toArray();
 }
 
 export type { Product, PostCode, Region, RegionType, RegionConstant };
-export { db, loadDatabase, searchProducts, getAllRestaurants, getRegions, getRegion, regionConstants };
+export { db, loadDatabase, searchProducts, getAllRestaurants, getRegions, getAllRegions, getRegion, regionConstants };
