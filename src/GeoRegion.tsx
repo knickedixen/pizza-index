@@ -1,7 +1,7 @@
 import { searchProducts } from "./db";
 import { calculateAverage } from "./App";
 import Gradient from "javascript-color-gradient";
-import { useEffect, useState, useContext } from "react"
+import { useEffect, useState, useContext, useMemo } from "react"
 import { Region, regionConstants } from './db.ts'
 import { Tooltip, GeoJSON, useMap } from 'react-leaflet'
 import { Polyline } from "leaflet";
@@ -27,6 +27,19 @@ const getColor = function(region: Region, average: number, selectedRegion: strin
   return gradient.getColor(weight);
 }
 
+const createStyle = function(region: Region, average: number, selectedRegion: string | null) {
+  const color = getColor(region, average, selectedRegion)
+  const opacity = selectedRegion == region.id ? 0 : 0.5;
+
+  return {
+    fillColor: color,
+    weight: 1,
+    opacity: 1,
+    color: color,
+    fillOpacity: opacity,
+  };
+}
+
 export default function GeoRegion({ region }: { region: Region }) {
   const [count, setCount] = useState<number>(0)
   const [average, setAverage] = useState<number>(0)
@@ -38,21 +51,18 @@ export default function GeoRegion({ region }: { region: Region }) {
     setRegionType,
     setSelectedRegion } = useContext(RegionSelectionContext);
 
-  let color = getColor(region, average, selectedRegion);
-  let opacity = selectedRegion == region.id ? 0 : 0.5;
+  let style = useMemo(() =>
+    createStyle(region, average, selectedRegion),
+    [region, average, selectedRegion]
+  );
 
-  const geoJsonStyle = {
-    fillColor: color,
-    weight: 1,
-    opacity: 1,
-    color: color,
-    fillOpacity: opacity,
-  };
-
-  searchProducts(region.id).then((products) => {
-    setAverage(calculateAverage(products ?? []));
-    setCount(products ? products.length : 0);
-  });
+  useMemo(() =>
+    searchProducts(region.id).then((products) => {
+      setAverage(calculateAverage(products ?? []));
+      setCount(products ? products.length : 0);
+    }),
+    [region]
+  );
 
   useEffect(() => {
     fitBounds();
@@ -86,7 +96,7 @@ export default function GeoRegion({ region }: { region: Region }) {
 
   return (
     <>
-      <GeoJSON data={region.geojson} style={geoJsonStyle} onEachFeature={onEachFeature}>
+      <GeoJSON data={region.geojson} style={style} onEachFeature={onEachFeature}>
         {selectedRegion != region.id &&
           <Tooltip>
             <div style={{ fontSize: 16 }}><b><u>{region.name}</u></b></div>

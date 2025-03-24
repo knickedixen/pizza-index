@@ -1,8 +1,7 @@
 import { useEffect, useState, createContext, useContext } from 'react'
 import { searchProducts, Product, getRegions, RegionType, regionConstants, RegionConstant, getAllRestaurants, getRegion } from './db.ts'
-import { Layout, Select, Flex, Spin, Tooltip, Button } from 'antd';
+import { Layout, Select, Flex, Tooltip, Button } from 'antd';
 import Map from './Map.tsx'
-import { LoadingOutlined } from '@ant-design/icons';
 import { LoadingContext } from './DBLoader.tsx';
 
 const { Header, Content } = Layout;
@@ -49,7 +48,6 @@ function App() {
   const [products, setProducts] = useState<Array<Product>>([]);
   const [areaOptions, setAreaOptions] = useState<Array<{ value: string, label: string }>>([]);
   const [regionTypeOptions, setRegionTypeOptions] = useState<Array<{ value: string, label: string }>>([]);
-  const [loadingProducts, setLoadingProducts] = useState<boolean>(false);
   const { dbReady } = useContext(LoadingContext);
 
   const regionSelection = {
@@ -62,7 +60,6 @@ function App() {
   useEffect(() => {
     if (dbReady) {
       if (selectedRegion) {
-        setLoadingProducts(true);
         getRegion(selectedRegion).then(region => {
           if (region && region.type) {
             setRegionType(region.type);
@@ -72,7 +69,6 @@ function App() {
           setProducts(products ?? []);
           setAreaAverage(calculateAverage(products ?? []));
           setAreaCount(products ? products.length : 0);
-          setLoadingProducts(false);
         });
       } else {
         setProducts([]);
@@ -156,13 +152,11 @@ function App() {
               </div>
             </Flex>
           </Header>
-          <Spin style={{ minHeight: "100%" }} indicator={<LoadingOutlined style={{ fontSize: 80 }} />} spinning={loadingProducts}>
-            <Layout style={{ height: "100%" }}>
-              <Content>
-                <Map products={products} />
-              </Content>
-            </Layout>
-          </Spin >
+          <Layout style={{ height: "100%" }}>
+            <Content>
+              <Map products={products} />
+            </Content>
+          </Layout>
         </Layout >
       </RegionSelectionContext.Provider>
     </>
