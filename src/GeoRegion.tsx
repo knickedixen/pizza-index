@@ -1,12 +1,11 @@
-import { searchProducts } from "./db";
-import { calculateAverage } from "./App";
+import { searchProducts, calculateAverage } from "./db";
 import Gradient from "javascript-color-gradient";
 import { useEffect, useState, useContext, useMemo } from "react"
 import { Region, regionConstants } from './db.ts'
-import { Tooltip, GeoJSON, useMap } from 'react-leaflet'
+import { GeoJSON, useMap } from 'react-leaflet'
 import { Polyline } from "leaflet";
 import { Feature } from "geojson";
-import { RegionSelectionContext } from "./App";
+import { RegionSelectionContext } from "./Map";
 
 const getColor = function(region: Region, average: number, selectedRegion: string | null) {
   if (!region.type || !regionConstants.has(region.type)) {
@@ -41,14 +40,11 @@ const createStyle = function(region: Region, average: number, selectedRegion: st
 }
 
 export default function GeoRegion({ region }: { region: Region }) {
-  const [count, setCount] = useState<number>(0)
   const [average, setAverage] = useState<number>(0)
   const [layer, setLayer] = useState<Polyline | null>()
   const map = useMap();
   const {
     selectedRegion,
-    regionType,
-    setRegionType,
     setSelectedRegion } = useContext(RegionSelectionContext);
 
   let style = useMemo(() =>
@@ -59,7 +55,6 @@ export default function GeoRegion({ region }: { region: Region }) {
   useMemo(() =>
     searchProducts(region.id).then((products) => {
       setAverage(calculateAverage(products ?? []));
-      setCount(products ? products.length : 0);
     }),
     [region]
   );
@@ -68,21 +63,10 @@ export default function GeoRegion({ region }: { region: Region }) {
     fitBounds();
   }, [selectedRegion, layer]);
 
-  useEffect(() => {
-    if (layer) {
-      if (regionType == region.type) {
-        map.addLayer(layer);
-      } else {
-        map.removeLayer(layer);
-      }
-    }
-  }, [regionType, layer]);
-
   const onEachFeature = (_feature: Feature, layer: Polyline) => {
     setLayer(layer);
     layer.on("click", function() {
       if (region.type && region.id) {
-        setRegionType(region.type)
         setSelectedRegion(region.id)
       }
     })
@@ -97,19 +81,6 @@ export default function GeoRegion({ region }: { region: Region }) {
   return (
     <>
       <GeoJSON data={region.geojson} style={style} onEachFeature={onEachFeature}>
-        {selectedRegion != region.id &&
-          <Tooltip>
-            <div style={{ fontSize: 16 }}><b><u>{region.name}</u></b></div>
-            {count > 0 ?
-              <div>
-                <b>Restaurants:</b> {count}
-                <br />
-                <b>Average price:</b> {average.toFixed(1)} kr
-              </div>
-              : <p>Data missing</p>
-            }
-          </Tooltip>
-        }
       </GeoJSON>
     </>
   );

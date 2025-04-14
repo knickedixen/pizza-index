@@ -124,5 +124,10 @@ function getRegions(type: RegionType) {
   return db.region.where("type").equalsIgnoreCase(type).toArray();
 }
 
+function calculateAverage(products: Array<Product>) {
+  let sum = products.reduce((sum, product) => sum + product.price, 0);
+  return sum > 0 ? sum / products.length : 0;
+}
+
 export type { Product, PostCode, Region, RegionType, RegionConstant };
-export { db, loadDatabase, searchProducts, getAllRestaurants, getRegions, getAllRegions, getRegion, regionConstants };
+export { db, loadDatabase, searchProducts, getAllRestaurants, getRegions, getAllRegions, getRegion, regionConstants, calculateAverage };

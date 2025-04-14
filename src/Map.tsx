@@ -1,7 +1,7 @@
 import "./Map.css"
-import { useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useState } from "react"
 import { MapContainer, TileLayer, Marker } from 'react-leaflet'
-import { getAllRegions, Product, Region } from './db.ts'
+import { getAllRegions, Product, Region, searchProducts, getRegion, calculateAverage } from './db.ts'
 import { icon, point } from "leaflet"
 import MarkerClusterGroup from "react-leaflet-markercluster"
 import 'leaflet/dist/leaflet.css'
@@ -11,11 +11,12 @@ import shadowUrl from './assets/marker-shadow.svg'
 import redIconUrl from './assets/marker-red.svg'
 import greenIconUrl from './assets/marker-green.svg'
 import blueIconUrl from './assets/marker-blue.svg'
-import GeoRegion from "./GeoRegion.tsx"
-import { RegionSelectionContext } from "./App";
 import { LoadingContext } from "./DBLoader.tsx"
 import RestaurantPopup from "./RestaurantPopup.tsx"
 import RecenterMapAutomatically from "./RecenterMapAutomatically.tsx"
+import GeoRegionControl from "./GeoRegionControl.tsx"
+import AreaInfoBox from "./AreaInfoBox.tsx"
+import SearchRegionInput from "./SearchRegionInput.tsx"
 
 const smallIconSize = point(24, 24);
 const smallIconAnchor = point(12, 24);
@@ -50,11 +51,36 @@ const blueIcon = icon({
   shadowAnchor: smallShadowAnchor
 })
 
-export default function Map({ products }: { products: Array<Product> }) {
+type RegionSelection = {
+  region: Region | null,
+  selectedRegion: string | null,
+  setRegion: (type: Region) => void;
+  setSelectedRegion: (region: string | null) => void;
+}
+
+const RegionSelectionContext = createContext<RegionSelection>({
+  region: null,
+  selectedRegion: null,
+  setRegion: () => { },
+  setSelectedRegion: () => { },
+});
+
+export default function Map() {
+  const [areaCount, setAreaCount] = useState<number>(0)
+  const [areaAverage, setAreaAverage] = useState<number>(0)
+  const [region, setRegion] = useState<Region | null>(null)
+  const [products, setProducts] = useState<Array<Product>>([]);
   const productsCopy = [...products];
   const { dbReady } = useContext(LoadingContext);
-  const { selectedRegion } = useContext(RegionSelectionContext);
+  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [regions, setRegions] = useState<Array<Region>>([])
+
+  const regionSelection = {
+    region: region,
+    setRegion: setRegion,
+    selectedRegion: selectedRegion,
+    setSelectedRegion: setSelectedRegion
+  }
 
   let cheapest, mostExpensive;
   if (productsCopy.length > 1) {
@@ -68,54 +94,85 @@ export default function Map({ products }: { products: Array<Product> }) {
     }
   }, [dbReady]);
 
+  useEffect(() => {
+    if (dbReady) {
+      if (selectedRegion) {
+        getRegion(selectedRegion).then(region => {
+          setRegion(region ?? null);
+        });
+        searchProducts(selectedRegion).then((products) => {
+          setProducts(products ?? []);
+          setAreaAverage(calculateAverage(products ?? []));
+          setAreaCount(products ? products.length : 0);
+        });
+      } else {
+        setProducts([]);
+      }
+    }
+  }, [selectedRegion, dbReady]);
+
   return (
     <>
-      <MapContainer center={[62, 15]} zoom={5} scrollWheelZoom={true}>
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        {cheapest &&
-          <Marker
-            zIndexOffset={2}
-            title="Cheapest!"
-            key={cheapest.code}
-            icon={greenIcon}
-            position={[cheapest.latitude, cheapest.longitude]}
-          >
-            <RestaurantPopup product={cheapest} />
-          </Marker>
-        }
-
-        <MarkerClusterGroup>
-          {productsCopy?.map((product) => (
+      <RegionSelectionContext.Provider value={regionSelection}>
+        <MapContainer center={[62, 15]} zoom={5} scrollWheelZoom={true}>
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          {cheapest &&
             <Marker
-              key={product.code}
-              icon={blueIcon}
-              position={[product.latitude, product.longitude]}
+              zIndexOffset={2}
+              title="Cheapest!"
+              key={cheapest.code}
+              icon={greenIcon}
+              position={[cheapest.latitude, cheapest.longitude]}
             >
-              <RestaurantPopup product={product} />
+              <RestaurantPopup product={cheapest} />
             </Marker>
-          ))}
-        </MarkerClusterGroup>
+          }
 
-        {mostExpensive &&
-          <Marker
-            zIndexOffset={1}
-            title="Most Expensive!"
-            key={mostExpensive.code}
-            icon={redIcon}
-            position={[mostExpensive.latitude, mostExpensive.longitude]}
-          >
-            <RestaurantPopup product={mostExpensive} />
-          </Marker>
-        }
-        {regions?.map((region) => (
-          <GeoRegion key={region.id} region={region} />
-        ))}
+          <MarkerClusterGroup>
+            {productsCopy?.map((product) => (
+              <Marker
+                key={product.code}
+                icon={blueIcon}
+                position={[product.latitude, product.longitude]}
+              >
+                <RestaurantPopup product={product} />
+              </Marker>
+            ))}
+          </MarkerClusterGroup>
 
-        <RecenterMapAutomatically selectedRegion={selectedRegion} />
-      </MapContainer>
+          {mostExpensive &&
+            <Marker
+              zIndexOffset={1}
+              title="Most Expensive!"
+              key={mostExpensive.code}
+              icon={redIcon}
+              position={[mostExpensive.latitude, mostExpensive.longitude]}
+            >
+              <RestaurantPopup product={mostExpensive} />
+            </Marker>
+          }
+
+          <GeoRegionControl regions={regions} />
+
+          <SearchRegionInput />
+
+
+          {selectedRegion &&
+            <AreaInfoBox
+              name={region?.name}
+              count={areaCount}
+              average={areaAverage}
+              onClose={() => setSelectedRegion(null)}
+            />
+          }
+          <RecenterMapAutomatically selectedRegion={selectedRegion} />
+        </MapContainer>
+      </RegionSelectionContext.Provider>
     </>
   );
 }
+
+export { RegionSelectionContext };
