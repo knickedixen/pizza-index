@@ -8,8 +8,6 @@ import 'leaflet/dist/leaflet.css'
 // @ts-ignore
 import 'react-leaflet-markercluster/styles'
 import shadowUrl from './assets/marker-shadow.svg'
-import redIconUrl from './assets/marker-red.svg'
-import greenIconUrl from './assets/marker-green.svg'
 import blueIconUrl from './assets/marker-blue.svg'
 import { LoadingContext } from "./DBLoader.tsx"
 import RestaurantPopup from "./RestaurantPopup.tsx"
@@ -22,26 +20,6 @@ const smallIconSize = point(24, 24);
 const smallIconAnchor = point(12, 24);
 const smallShadowAnchor = point(11, 23);
 
-const bigIconSize = point(36, 36);
-const bigIconAnchor = point(18, 36);
-const bigShadowAnchor = point(17, 35);
-
-const redIcon = icon({
-  iconUrl: redIconUrl,
-  iconSize: bigIconSize,
-  iconAnchor: bigIconAnchor,
-  shadowUrl: shadowUrl,
-  shadowSize: bigIconSize,
-  shadowAnchor: bigShadowAnchor
-});
-const greenIcon = icon({
-  iconUrl: greenIconUrl,
-  iconSize: bigIconSize,
-  iconAnchor: bigIconAnchor,
-  shadowUrl: shadowUrl,
-  shadowSize: bigIconSize,
-  shadowAnchor: bigShadowAnchor
-})
 const blueIcon = icon({
   iconUrl: blueIconUrl,
   iconSize: smallIconSize,
