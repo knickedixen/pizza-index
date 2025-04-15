@@ -70,7 +70,6 @@ export default function Map() {
   const [areaAverage, setAreaAverage] = useState<number>(0)
   const [region, setRegion] = useState<Region | null>(null)
   const [products, setProducts] = useState<Array<Product>>([]);
-  const productsCopy = [...products];
   const { dbReady } = useContext(LoadingContext);
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [regions, setRegions] = useState<Array<Region>>([])
@@ -80,12 +79,6 @@ export default function Map() {
     setRegion: setRegion,
     selectedRegion: selectedRegion,
     setSelectedRegion: setSelectedRegion
-  }
-
-  let cheapest, mostExpensive;
-  if (productsCopy.length > 1) {
-    cheapest = productsCopy?.shift();
-    mostExpensive = productsCopy?.pop();
   }
 
   useEffect(() => {
@@ -119,46 +112,24 @@ export default function Map() {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          {cheapest &&
-            <Marker
-              zIndexOffset={2}
-              title="Cheapest!"
-              key={cheapest.code}
-              icon={greenIcon}
-              position={[cheapest.latitude, cheapest.longitude]}
-            >
-              <RestaurantPopup product={cheapest} />
-            </Marker>
-          }
 
-          <MarkerClusterGroup>
-            {productsCopy?.map((product) => (
-              <Marker
-                key={product.code}
-                icon={blueIcon}
-                position={[product.latitude, product.longitude]}
-              >
-                <RestaurantPopup product={product} />
-              </Marker>
-            ))}
-          </MarkerClusterGroup>
-
-          {mostExpensive &&
-            <Marker
-              zIndexOffset={1}
-              title="Most Expensive!"
-              key={mostExpensive.code}
-              icon={redIcon}
-              position={[mostExpensive.latitude, mostExpensive.longitude]}
-            >
-              <RestaurantPopup product={mostExpensive} />
-            </Marker>
+          {products &&
+            <MarkerClusterGroup>
+              {products.map((product) => (
+                <Marker
+                  key={product.code}
+                  icon={blueIcon}
+                  position={[product.latitude, product.longitude]}
+                >
+                  <RestaurantPopup product={product} />
+                </Marker>
+              ))}
+            </MarkerClusterGroup>
           }
 
           <GeoRegionControl regions={regions} />
 
           <SearchRegionInput />
-
 
           {selectedRegion &&
             <AreaInfoBox
