@@ -57,7 +57,7 @@ function getAllRestaurants() {
 }
 
 function getRegion(id: string) {
-  return search(regions, `[? id == '${id}']`);
+  return search(regions, `[? id == '${id}'] | [0]`);
 }
 
 function getAllRegions() {

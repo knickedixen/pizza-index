@@ -7,14 +7,14 @@ import { geoJson, LatLngBounds, Polyline } from "leaflet";
 import { Feature } from "geojson";
 import { RegionSelectionContext } from "./App.tsx";
 
-const getColor = function(region: Region, average: number, selectedRegion: string | null) {
+const getColor = function(region: Region, average: number, selectedRegion: Region | null) {
   if (!region.type || !regionConstants.has(region.type)) {
     console.warn(`Uknown region type '${region.type}'`);
     return "gray";
   }
 
   let typeConstants = regionConstants.get(region.type);
-  if (average <= 0 || selectedRegion == region.id || !typeConstants) {
+  if (average <= 0 || selectedRegion?.id == region.id || !typeConstants) {
     return "gray";
   }
 
@@ -26,9 +26,9 @@ const getColor = function(region: Region, average: number, selectedRegion: strin
   return gradient.getColor(weight);
 }
 
-const createStyle = function(region: Region, average: number, selectedRegion: string | null) {
+const createStyle = function(region: Region, average: number, selectedRegion: Region | null) {
   const color = getColor(region, average, selectedRegion)
-  const opacity = selectedRegion == region.id ? 0 : 0.5;
+  const opacity = selectedRegion?.id == region.id ? 0 : 0.5;
 
   return {
     fillColor: color,
@@ -63,13 +63,13 @@ export default function GeoRegion({ region }: { region: Region }) {
   const onEachFeature = (_feature: Feature, layer: Polyline) => {
     layer.on("click", function() {
       if (region.type && region.id) {
-        setSelectedRegion(region.id)
+        setSelectedRegion(region)
       }
     })
   };
 
   const fitBounds = function() {
-    if (selectedRegion == region.id && bounds) {
+    if (selectedRegion?.id == region.id && bounds) {
       map.fitBounds(bounds);
     }
   }

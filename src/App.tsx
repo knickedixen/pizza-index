@@ -1,42 +1,28 @@
 import { Button, Layout } from 'antd';
 import Map from './Map.tsx'
-import { createContext, useEffect, useState } from 'react';
-import { getRegion, Region } from './db.ts';
+import { createContext, useState } from 'react';
+import { Region } from './db.ts';
 import SearchRegionInput from './SearchRegionInput.tsx';
 import { CloseOutlined } from '@ant-design/icons';
+import AreaTables from './AreaTables.tsx';
 
 type RegionSelection = {
-  region: Region | null,
-  selectedRegion: string | null,
-  setRegion: (type: Region) => void;
-  setSelectedRegion: (region: string | null) => void;
+  selectedRegion: Region | null,
+  setSelectedRegion: (type: Region | null) => void;
 }
 
 const RegionSelectionContext = createContext<RegionSelection>({
-  region: null,
   selectedRegion: null,
-  setRegion: () => { },
   setSelectedRegion: () => { },
 });
 
 function App() {
-  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
-  const [region, setRegion] = useState<Region | null>(null)
+  const [selectedRegion, setSelectedRegion] = useState<Region | null>(null)
 
   const regionSelection = {
-    region: region,
-    setRegion: setRegion,
     selectedRegion: selectedRegion,
-    setSelectedRegion: setSelectedRegion
+    setSelectedRegion: setSelectedRegion,
   }
-
-  useEffect(() => {
-    if (selectedRegion) {
-      setRegion(getRegion(selectedRegion));
-    } else {
-      setRegion(null);
-    }
-  }, [selectedRegion]);
 
   return (
     <>
@@ -52,6 +38,7 @@ function App() {
                 </Button>
               </div>}
           </div>
+          <AreaTables />
         </Layout >
       </RegionSelectionContext.Provider>
     </>

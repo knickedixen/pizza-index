@@ -41,8 +41,8 @@ export default function Map() {
         />
 
         <MarkerClusterGroup>
-          {products.map((product) => (
-            selectedRegion && product.county_code.startsWith(selectedRegion) &&
+          {products.map((product) =>
+            selectedRegion && product.county_code.startsWith(selectedRegion.id) &&
             <Marker
               key={product.code}
               icon={blueIcon}
@@ -50,11 +50,13 @@ export default function Map() {
             >
               <RestaurantPopup product={product} />
             </Marker>
-          ))}
+          )}
         </MarkerClusterGroup>
         <GeoRegionControl />
 
-        <RecenterMapAutomatically selectedRegion={selectedRegion} />
+        {!selectedRegion &&
+          <RecenterMapAutomatically />
+        }
       </MapContainer>
     </>
   );

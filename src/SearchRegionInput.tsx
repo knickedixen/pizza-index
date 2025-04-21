@@ -1,6 +1,6 @@
 import { Button, Select } from "antd";
 import { useContext, useMemo, useState } from "react";
-import { getAllRegions, Region } from './db.ts'
+import { getAllRegions, getRegion, Region } from './db.ts'
 import { RegionSelectionContext } from "./App.tsx";
 import { SearchOutlined } from '@ant-design/icons';
 
@@ -19,8 +19,8 @@ export default function SearchRegionInput() {
       autoFocus
       onBlur={() => setOpen(false)}
       showSearch
-      value={selectedRegion}
-      onSelect={val => { setSelectedRegion(val); setOpen(false); }}
+      value={selectedRegion?.id}
+      onSelect={val => { setSelectedRegion(getRegion(val)); setOpen(false); }}
       placeholder="Search Area"
       style={{ width: 250, height: 48 }}
       size="large"
