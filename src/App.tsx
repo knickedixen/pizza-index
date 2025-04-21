@@ -1,10 +1,10 @@
-import { Button, Layout } from 'antd';
+import { Button } from 'antd';
 import Map from './Map.tsx'
 import { createContext, useState } from 'react';
 import { Region } from './db.ts';
 import SearchRegionInput from './SearchRegionInput.tsx';
 import { CloseOutlined } from '@ant-design/icons';
-import AreaTables from './AreaTables.tsx';
+import AreaInfo from './AreaInfo.tsx';
 
 type RegionSelection = {
   selectedRegion: Region | null,
@@ -27,19 +27,17 @@ function App() {
   return (
     <>
       <RegionSelectionContext.Provider value={regionSelection}>
-        <Layout style={{ background: "#fff", height: '100%' }}>
-          <div style={{ height: 'calc(100% - 125px)' }} >
-            <Map />
-            <SearchRegionInput />
-            {selectedRegion &&
-              <div className="deselect-container">
-                <Button onClick={() => setSelectedRegion(null)} className="map-button">
-                  <CloseOutlined />
-                </Button>
-              </div>}
-          </div>
-          <AreaTables />
-        </Layout >
+        <div className="map-container">
+          <Map />
+          <SearchRegionInput />
+          {selectedRegion &&
+            <div className="deselect-button">
+              <Button onClick={() => setSelectedRegion(null)} className="map-button">
+                <CloseOutlined />
+              </Button>
+            </div>}
+        </div>
+        <AreaInfo />
       </RegionSelectionContext.Provider>
     </>
   )

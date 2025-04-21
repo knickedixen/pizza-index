@@ -1,4 +1,3 @@
-import "./Map.css"
 import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 import { getAllRestaurants, Product } from './db.ts'
 import { icon, point } from "leaflet"

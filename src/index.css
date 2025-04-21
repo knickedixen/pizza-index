@@ -4,35 +4,8 @@ html, body, #root {
   flex-direction: column;
   background: white;
 }
-.area-info-toggle {
-  position: absolute;
-  top: 5px;
-  width: 100%;
-  text-align: center;
-}
-.area-infobox {
-  position: absolute;
-  left: 10%;
-  bottom: 10%;
-  z-index: 1000;
-  background: rgba(255, 255, 255, 0.8);
-  padding: 8px;
-  border-radius: 5px;
-}
-.area-infobox-title {
-  font-size: 20px;
-  margin-right: 30px;
-}
-.area-infobox-body {
-  font-size: 14px;
-  padding: 3px;
-  margin-right: 30px;
-}
-.area-infobox-close {
-  position: absolute;
-  top: 8px;
-  font-size:14px;
-  inset-inline-end: 8px;
+.map-container {
+  height: calc(100% - 125px);
 }
 .search-container {
   position: absolute;
@@ -40,30 +13,38 @@ html, body, #root {
   top: 75px;
   right: 18px;
 }
-.deselect-container {
+.deselect-button {
   position: absolute;
   z-index: 1000;
   top: 135px;
   right: 18px;
 }
 .map-button {
-  width: 48px; 
-  height: 48px; 
+  width: 48px;
+  height: 48px;
   font-size: 26px;
   color: gray;
   border: 2px solid rgba(0,0,0,0.2);
   background-clip: padding-box;
 }
-.table-container {
+.area-info-toggle {
+  position: absolute;
+  top: 5px;
+  left: -4px;
+  width: 100%;
+  text-align: center;
+}
+.area-info-container {
   position: absolute;
   z-index: 1000;
   bottom: 0px;
   width: 100%;
   background: white;
 }
-.ant-spin-container {
+.leaflet-container {
   height: 100%;
+  width: 100%;
 }
-.ant-spin-nested-loading  {
- height: 100%;
+path.leaflet-interactive:focus {
+    outline: none;
 }
