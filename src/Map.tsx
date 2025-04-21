@@ -54,9 +54,7 @@ export default function Map() {
         </MarkerClusterGroup>
         <GeoRegionControl />
 
-        {!selectedRegion &&
-          <RecenterMapAutomatically />
-        }
+        <RecenterMapAutomatically />
       </MapContainer>
     </>
   );

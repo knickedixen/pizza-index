@@ -14,7 +14,9 @@ export default function GeoRegionControl() {
   useMemo(() => setRegions(getAllRegions()), []);
 
   useEffect(() => {
-    setIsCountySelected(selectedRegion?.type == "county");
+    if (selectedRegion) {
+      setIsCountySelected(selectedRegion.type == "county");
+    }
   }, [selectedRegion]);
 
   return (
