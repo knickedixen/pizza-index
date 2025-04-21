@@ -28,7 +28,7 @@ function App() {
     <>
       <RegionSelectionContext.Provider value={regionSelection}>
         <Layout style={{ background: "#fff", height: '100%' }}>
-          <div style={{ height: 'calc(100% - 115px)' }} >
+          <div style={{ height: 'calc(100% - 125px)' }} >
             <Map />
             <SearchRegionInput />
             {selectedRegion &&

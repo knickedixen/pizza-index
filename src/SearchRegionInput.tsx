@@ -21,7 +21,7 @@ export default function SearchRegionInput() {
       showSearch
       value={selectedRegion?.id}
       onSelect={val => { setSelectedRegion(getRegion(val)); setOpen(false); }}
-      placeholder="Search Area"
+      placeholder="Sök län eller kommun..."
       style={{ width: 250, height: 48 }}
       size="large"
       optionFilterProp="label"
@@ -33,7 +33,7 @@ export default function SearchRegionInput() {
   } else {
     content = <Button
       className="map-button"
-      title="Search"
+      title="Sök område"
       onClick={() => setOpen(true)}>
       <SearchOutlined />
     </Button>

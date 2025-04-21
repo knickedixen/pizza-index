@@ -3,10 +3,12 @@ import { calculateAverage, getAllRestaurants, Product } from './db';
 import { RegionSelectionContext } from "./App";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { SortOrder } from "antd/es/table/interface";
+import { UpOutlined, DownOutlined } from '@ant-design/icons';
 
 export default function AreaTables() {
   const { selectedRegion } = useContext(RegionSelectionContext);
   const [products, setProducts] = useState<Array<Product>>([]);
+  const [expanded, setExpanded] = useState<boolean>(false);
   const [selectedProducts, setSelectedProducts] = useState<Array<Product>>([]);
   useMemo(() => setProducts(getAllRestaurants()), []);
 
@@ -16,9 +18,10 @@ export default function AreaTables() {
 
   const label = (
     <div className='area-info-header'>
-      <p><b>{selectedRegion?.name ?? "Sweden"}</b></p>
-      <span>Restaurants: {selectedProducts.length}</span>
-      <span>Mean: {calculateAverage(selectedProducts).toFixed(1)}kr</span>
+      <div className="area-info-toggle">{expanded ? <DownOutlined /> : <UpOutlined />}</div>
+      <h2>{selectedRegion?.name ?? "Hela landet"}</h2>
+      <span><b>Antal restauranger:</b> {selectedProducts.length}</span>
+      <span style={{ marginLeft: 5 }}><b>Snittpris: </b>{calculateAverage(selectedProducts).toFixed(1)}kr</span>
     </div>
   );
 
@@ -31,7 +34,7 @@ export default function AreaTables() {
     sorter: any
   }[] = [
       {
-        title: "Restaurant",
+        title: "Restaurang",
         dataIndex: "restaurant",
         key: "restaurant",
         defaultSortOrder: null,
@@ -39,7 +42,7 @@ export default function AreaTables() {
         sorter: null
       },
       {
-        title: "Price",
+        title: "Pris",
         dataIndex: "price",
         key: "price",
         defaultSortOrder: "ascend",
@@ -50,16 +53,21 @@ export default function AreaTables() {
 
   return (
     <div className='table-container'>
-      <Collapse bordered={false} ghost size='large' expandIconPosition='start' items={[{
-        label: label, showArrow: false, children:
-          <Table dataSource={selectedProducts} columns={columns} size="small" pagination={{ pageSize: 5, showSizeChanger: false }}
-            onRow={() => {
-              return {
-                //onClick: () => { alert("TODO Postcode: " + product.postcode) },
-              };
-            }}
-          />
-      }]} />
+      <Collapse
+        bordered={false}
+        ghost
+        size='large'
+        onChange={(event) => setExpanded(event.length > 0)}
+        items={[{
+          label: label, showArrow: false, children:
+            <Table dataSource={selectedProducts} columns={columns} size="small" pagination={{ pageSize: 5, showSizeChanger: false }}
+              onRow={() => {
+                return {
+                  //onClick: () => { alert("TODO Postcode: " + product.postcode) },
+                };
+              }}
+            />
+        }]} />
     </div>
   );
 

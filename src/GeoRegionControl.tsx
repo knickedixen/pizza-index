@@ -20,7 +20,7 @@ export default function GeoRegionControl() {
   return (
     <>
       <LayersControl position="topright">
-        <LayersControl.BaseLayer checked={!isCountySelected} name="Landskap">
+        <LayersControl.BaseLayer checked={!isCountySelected} name="Län">
           <LayerGroup>
             {regions?.map((region) => (
               region.type == "state" &&

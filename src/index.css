@@ -4,6 +4,12 @@ html, body, #root {
   flex-direction: column;
   background: white;
 }
+.area-info-toggle {
+  position: absolute;
+  top: 5px;
+  width: 100%;
+  text-align: center;
+}
 .area-infobox {
   position: absolute;
   left: 10%;
