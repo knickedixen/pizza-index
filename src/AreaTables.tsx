@@ -52,7 +52,7 @@ export default function AreaTables() {
     <div className='table-container'>
       <Collapse bordered={false} ghost size='large' expandIconPosition='start' items={[{
         label: label, showArrow: false, children:
-          <Table dataSource={products} columns={columns} size="small" pagination={{ pageSize: 5, showSizeChanger: false }}
+          <Table dataSource={selectedProducts} columns={columns} size="small" pagination={{ pageSize: 5, showSizeChanger: false }}
             onRow={() => {
               return {
                 //onClick: () => { alert("TODO Postcode: " + product.postcode) },
