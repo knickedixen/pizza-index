@@ -3,9 +3,9 @@ import Gradient from "javascript-color-gradient";
 import { useEffect, useState, useContext, useMemo } from "react"
 import { Region, regionConstants } from './db.ts'
 import { GeoJSON, useMap } from 'react-leaflet'
-import { Polyline } from "leaflet";
+import { geoJson, LatLngBounds, Polyline } from "leaflet";
 import { Feature } from "geojson";
-import { RegionSelectionContext } from "./Map";
+import { RegionSelectionContext } from "./App.tsx";
 
 const getColor = function(region: Region, average: number, selectedRegion: string | null) {
   if (!region.type || !regionConstants.has(region.type)) {
@@ -41,30 +41,26 @@ const createStyle = function(region: Region, average: number, selectedRegion: st
 
 export default function GeoRegion({ region }: { region: Region }) {
   const [average, setAverage] = useState<number>(0)
-  const [layer, setLayer] = useState<Polyline | null>()
+  const [bounds, setBounds] = useState<LatLngBounds | null>()
   const map = useMap();
-  const {
-    selectedRegion,
-    setSelectedRegion } = useContext(RegionSelectionContext);
+  const { selectedRegion, setSelectedRegion } = useContext(RegionSelectionContext);
 
   let style = useMemo(() =>
     createStyle(region, average, selectedRegion),
     [region, average, selectedRegion]
   );
 
-  useMemo(() =>
-    searchProducts(region.id).then((products) => {
-      setAverage(calculateAverage(products ?? []));
-    }),
-    [region]
+  useMemo(() => {
+    setAverage(calculateAverage(searchProducts(region.id)));
+    setBounds(geoJson(region.geojson).getBounds());
+  }, [region]
   );
 
   useEffect(() => {
     fitBounds();
-  }, [selectedRegion, layer]);
+  }, [selectedRegion]);
 
   const onEachFeature = (_feature: Feature, layer: Polyline) => {
-    setLayer(layer);
     layer.on("click", function() {
       if (region.type && region.id) {
         setSelectedRegion(region.id)
@@ -73,8 +69,8 @@ export default function GeoRegion({ region }: { region: Region }) {
   };
 
   const fitBounds = function() {
-    if (selectedRegion == region.id && layer) {
-      map.fitBounds(layer.getBounds());
+    if (selectedRegion == region.id && bounds) {
+      map.fitBounds(bounds);
     }
   }
 

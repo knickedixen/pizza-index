@@ -1,8 +1,8 @@
 html, body, #root {
   height: 100%;
-  
   display: flex;
   flex-direction: column;
+  background: white;
 }
 .area-infobox {
   position: absolute;
@@ -32,15 +32,28 @@ html, body, #root {
   position: absolute;
   z-index: 1000;
   top: 75px;
-  right: 10px;
+  right: 18px;
 }
-.search-info-button {
+.deselect-container {
+  position: absolute;
+  z-index: 1000;
+  top: 135px;
+  right: 18px;
+}
+.map-button {
   width: 48px; 
   height: 48px; 
   font-size: 26px;
   color: gray;
   border: 2px solid rgba(0,0,0,0.2);
   background-clip: padding-box;
+}
+.table-container {
+  position: absolute;
+  z-index: 1000;
+  bottom: 0px;
+  width: 100%;
+  background: white;
 }
 .ant-spin-container {
   height: 100%;
