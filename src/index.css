@@ -1,17 +1,19 @@
 .map-container {
-  height: calc(100% - 125px);
+  height: calc(100% - 130px);
 }
 .search-container {
   position: absolute;
   z-index: 1000;
   top: 75px;
-  right: 18px;
+  margin-right: 10px;
+  right: 0px;
 }
 .deselect-button {
   position: absolute;
   z-index: 1000;
-  top: 135px;
-  right: 18px;
+  top: 142px;
+  margin-right: 10px;
+  right: 0px;
 }
 .map-button {
   width: 48px;

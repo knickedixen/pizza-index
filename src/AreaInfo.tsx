@@ -17,7 +17,7 @@ export default function AreaInfo() {
   }, [selectedRegion]);
 
   const label = (
-    <div>
+    <div className="area-info-label">
       <div className="area-info-toggle">{expanded ? <DownOutlined /> : <UpOutlined />}</div>
       <h2>{selectedRegion?.name ?? "Hela landet"}</h2>
       <span><b>Antal restauranger:</b> {selectedProducts.length}</span>
