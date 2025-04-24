@@ -32,7 +32,7 @@ export default function MapContent() {
 
   return (
     <>
-      <MarkerClusterGroup>
+      <MarkerClusterGroup maxClusterRadius={20}>
         {products.map((product) =>
           selectedRegion && product.county_code.startsWith(selectedRegion.id) &&
           <Marker
