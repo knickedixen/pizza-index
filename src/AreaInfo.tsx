@@ -1,12 +1,12 @@
 import { Collapse } from "antd";
 import { calculateAverage, getAllRestaurants, Product } from './db';
-import { RegionSelectionContext } from "./App";
+import { AppContext } from "./App";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { UpOutlined, DownOutlined } from '@ant-design/icons';
 import ProductTable from "./ProductTable";
 
 export default function AreaInfo() {
-  const { selectedRegion } = useContext(RegionSelectionContext);
+  const { selectedRegion, map } = useContext(AppContext);
   const [products, setProducts] = useState<Array<Product>>([]);
   const [expanded, setExpanded] = useState<boolean>(false);
   const [selectedProducts, setSelectedProducts] = useState<Array<Product>>([]);
@@ -25,15 +25,23 @@ export default function AreaInfo() {
     </div>
   );
 
+  useEffect(() => {
+    map?.on("movestart", () => {
+      setExpanded(false)
+    })
+  }, [map]);
+
   return (
     <div className='area-info-container'>
       <Collapse
         bordered={false}
+        activeKey={expanded ? "table" : []}
         ghost
         size='large'
         onChange={(event) => setExpanded(event.length > 0)}
         items={[{
           label: label,
+          key: "table",
           showArrow: false,
           children: <ProductTable selectedProducts={selectedProducts} />
         }]}

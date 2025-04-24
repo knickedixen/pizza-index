@@ -1,11 +1,11 @@
 import { searchProducts, calculateAverage } from "./db";
 import Gradient from "javascript-color-gradient";
-import { useEffect, useState, useContext, useMemo } from "react"
+import { useState, useContext, useMemo } from "react"
 import { Region, regionConstants } from './db.ts'
 import { GeoJSON, useMap } from 'react-leaflet'
 import { geoJson, LatLngBounds, Polyline } from "leaflet";
 import { Feature } from "geojson";
-import { RegionSelectionContext } from "./App.tsx";
+import { AppContext } from "./App.tsx";
 
 const getColor = function(region: Region, average: number, selectedRegion: Region | null) {
   if (!region.type || !regionConstants.has(region.type)) {
@@ -43,7 +43,7 @@ export default function GeoRegion({ region }: { region: Region }) {
   const [average, setAverage] = useState<number>(0)
   const [bounds, setBounds] = useState<LatLngBounds | null>()
   const map = useMap();
-  const { selectedRegion, setSelectedRegion } = useContext(RegionSelectionContext);
+  const { selectedRegion, setSelectedRegion } = useContext(AppContext);
 
   let style = useMemo(() =>
     createStyle(region, average, selectedRegion),
@@ -56,23 +56,16 @@ export default function GeoRegion({ region }: { region: Region }) {
   }, [region]
   );
 
-  useEffect(() => {
-    fitBounds();
-  }, [selectedRegion]);
-
   const onEachFeature = (_feature: Feature, layer: Polyline) => {
     layer.on("click", function() {
       if (region.type && region.id) {
         setSelectedRegion(region)
       }
+      if (bounds) {
+        map.fitBounds(bounds);
+      }
     })
   };
-
-  const fitBounds = function() {
-    if (selectedRegion?.id == region.id && bounds) {
-      map.fitBounds(bounds);
-    }
-  }
 
   return (
     <>

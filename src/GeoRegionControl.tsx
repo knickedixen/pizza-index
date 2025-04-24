@@ -1,11 +1,11 @@
 import { LayerGroup, LayersControl, useMapEvent } from 'react-leaflet';
 import { getAllRegions, Region } from './db.ts';
 import GeoRegion from './GeoRegion.tsx';
-import { RegionSelectionContext } from "./App";
+import { AppContext } from "./App";
 import { useContext, useEffect, useMemo, useState } from 'react';
 
 export default function GeoRegionControl() {
-  const { selectedRegion, setSelectedRegion } = useContext(RegionSelectionContext);
+  const { selectedRegion, setSelectedRegion } = useContext(AppContext);
   const [isCountySelected, setIsCountySelected] = useState<boolean>(false);
   const [regions, setRegions] = useState<Array<Region>>([]);
 

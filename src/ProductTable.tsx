@@ -1,8 +1,13 @@
 import { Table } from "antd";
 import { SortOrder } from "antd/es/table/interface";
-import { Product } from './db';
+import { getRegion, Product } from './db';
+import { latLng } from "leaflet";
+import { useContext } from "react";
+import { AppContext } from "./App";
 
 export default function ProductTable({ selectedProducts }: { selectedProducts: Array<Product> }) {
+  const { map, selectedRegion, setSelectedRegion } = useContext(AppContext);
+
   const columns: {
     title: string,
     dataIndex: string,
@@ -32,12 +37,19 @@ export default function ProductTable({ selectedProducts }: { selectedProducts: A
   return (
     <Table
       dataSource={selectedProducts}
+      rowKey={(product) => "table-" + product.code}
       columns={columns}
       size="small"
       pagination={{ pageSize: 5, showSizeChanger: false }}
-      onRow={() => {
+      onRow={(product) => {
         return {
-          //onClick: () => { alert("TODO Postcode: " + product.postcode) },
+          onClick: () => {
+            setSelectedRegion(
+              getRegion(selectedRegion?.type == "county" ?
+                product.county_code : product.state_code)
+            );
+            map?.flyTo(latLng(product.latitude, product.longitude), 15);
+          },
         };
       }}
     />
